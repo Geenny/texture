@@ -1,4 +1,4 @@
-import { BaseTexture, Texture } from "pixi.js";
+import { BaseTexture, Texture, Sprite } from "pixi.js";
 import EventDispathcer from "../../event/EventDispatcher.js";
 import ContentDropGrabber from "./ContentDropGrabber.js";
 import ContentDropEvent from "./ContentDropEvent.js";
@@ -6,6 +6,8 @@ import ResourceStruct from "./ResourceStruct.js";
 import ResourceType from "./ResourceType.js";
 import FileType from "../FileType.js";
 import ResourceEvent from "./ResourceEvent.js";
+import { TextureAtlas } from "@pixi-spine/base";
+import { AtlasAttachmentLoader, SkeletonJson, Spine } from "@pixi-spine/runtime-3.8";
 
 export default class ContentManager extends EventDispathcer {
 
@@ -20,8 +22,8 @@ export default class ContentManager extends EventDispathcer {
     }
 
     _initVars() {
-        this._contentStructList = [];
-        this._resourceStructList = [];
+        this._contentStructList = []; // Every files content
+        this._resourceStructList = []; // Ready resources
     }
 
     _contentDropGrabberInit() {
@@ -89,13 +91,13 @@ export default class ContentManager extends EventDispathcer {
             if ( this.checkJSON( json ) ) return true;
         }
 
-        if ( contentStruct.type === FileType.ATLAS ) {
-            return true;
-        }
+        // if ( contentStruct.type === FileType.ATLAS ) {
+        //     return true;
+        // }
 
-        if ( contentStruct.type === FileType.PNG ) {
-            return true;
-        }
+        // if ( contentStruct.type === FileType.PNG ) {
+        //     return true;
+        // }
 
         return false;
     }
@@ -174,6 +176,7 @@ export default class ContentManager extends EventDispathcer {
     _resourceCreateResource( contentStruct, type ) {
         const resourceStruct = {
             ...ResourceStruct,
+            contentStructList: [],
             type: type,
             name: contentStruct.name
         };
@@ -201,6 +204,26 @@ export default class ContentManager extends EventDispathcer {
     }
 
 
+
+    //
+    // IMAGE
+    //
+
+    _resourceImageCreate( resourceStruct ) {
+        if (resourceStruct.type !== FileType.PNG && resourceStruct.type !== FileType.JPG) return false;
+
+        const image = new Image();
+        image.src = contentStructPNG.result;
+        const texture = new BaseTexture(image);
+
+        resourceStruct.instance = new Sprite(texture);
+
+        debugger;
+
+        return true;
+    }
+
+
     //
     // SPINE
     //
@@ -217,11 +240,6 @@ export default class ContentManager extends EventDispathcer {
     _resourceSpineCreate( resourceStruct ) {
         if ( !this._resourceContentStructByFileTypeGet( resourceStruct, FileType.JSON ) ) return false;
         if ( !this._resourceSpineAtlasCheck( resourceStruct ) ) return false;
-
-        const TextureAtlas = window.PIXI.spine.core.TextureAtlas;
-        const AtlasAttachmentLoader = window.PIXI.spine.core.AtlasAttachmentLoader;
-        const SkeletonJson = window.PIXI.spine.core.SkeletonJson;
-        const Spine = window.PIXI.spine.Spine;
 
         const contentStructJSON = this._resourceContentStructByFileTypeGet( resourceStruct, FileType.JSON );
         const contentStructAtlas = this._resourceContentStructByFileTypeGet( resourceStruct, FileType.ATLAS );
@@ -256,7 +274,7 @@ export default class ContentManager extends EventDispathcer {
 
         for ( let i = 0; i < resourceStruct.contentStructList.length; i++ ) {
             const contentStruct = resourceStruct.contentStructList[ i ];
-            const index = list.indexOf( contentStruct.name );
+            const index = list.indexOf( contentStruct.file.name );
             if ( contentStruct.type != FileType.PNG || index < 0 ) continue;
 
             list.splice( index, 1 );
@@ -265,16 +283,27 @@ export default class ContentManager extends EventDispathcer {
         return list.length === 0;
     }
     _resourceSpineAtlasFileNamesGet( contentStruct ) {
+        const LINE_NEW = "\n";
         const list = [];
-        let positionOfName = 0;
-        let positionPNG = 0;
 
-        while ( true ) {
-            positionPNG = contentStruct.result.indexOf( ".png", positionOfName );
-            positionOfName = contentStruct.result.indexOf( contentStruct.name, positionOfName );
-            if ( positionOfName > 0 && positionOfName + contentStruct.name.length <= positionPNG && positionOfName + contentStruct.name.length + 3 > positionPNG ) {
-                list.push( contentStruct.result.substring( positionOfName, positionPNG ) );
-                positionOfName = positionPNG + 1;
+        let positionLine = 0;
+        let positionLineFirst = 0;
+        let positionLineLast = 0;
+        let nameLength = 0;
+        let divider = LINE_NEW;
+
+        while (true) {
+            if (positionLine > 0) divider = LINE_NEW + LINE_NEW;
+            positionLine = contentStruct.result.indexOf(divider, positionLine);
+            if (positionLine < 0) break;
+
+            positionLineFirst = positionLine + divider.length;
+            positionLineLast = contentStruct.result.indexOf(LINE_NEW, positionLineFirst);
+            nameLength = positionLineLast - positionLineFirst;
+
+            if (nameLength > 0 && nameLength < 256) {
+                list.push( contentStruct.result.substring( positionLineFirst, positionLineLast ) );
+                positionLine = positionLineLast + 1;
             } else {
                 break;
             }

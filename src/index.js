@@ -1,9 +1,4 @@
 import MainApplication from "./app/MainApplication";
-import * as PIXI from "pixi.js";
-
-window.PIXI = PIXI;
-
-require("pixi-spine");
 
 const HTMLElement = document.getElementById( 'ApplicationContainer' );
 

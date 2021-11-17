@@ -1,8 +1,7 @@
-const webpack = require( 'webpack' );
 const CopyWebpackPlugin = require( 'copy-webpack-plugin' );
 
 const host = 'localhost';
-const port = ( process.argv[2] ) || 8080;
+const port = ( process.argv[2] ) || 9000;
 
 module.exports = {
 	mode: 'development',
@@ -27,12 +26,13 @@ module.exports = {
 		config: 'config'
 	},
 	plugins: [
-		new webpack.HotModuleReplacementPlugin(),
-		new CopyWebpackPlugin([
-            { from: './src/assets', to: 'assets' },
-            { from: './src/assets/favicon.ico', to: 'favicon.ico' },
-            { from: './src/index.html', to: 'index.html' }
-		])
+		new CopyWebpackPlugin({
+			patterns: [
+				{ from: './src/assets', to: 'assets' },
+				{ from: './src/assets/favicon.ico', to: 'favicon.ico' },
+				{ from: './src/index.html', to: 'index.html' }
+			]
+		})
 	],
 	module: {
 		rules: [

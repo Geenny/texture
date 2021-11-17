@@ -47,7 +47,7 @@ export default class MainApplication {
             width: this.size.x, 
             height: this.size.y,                       
             antialias: true, 
-            transparent: false, 
+            backgroundAlpha: false,
             resolution: 1
         };
     }

@@ -21,11 +21,13 @@ const object = {
         new Visualizer({
             filename: './webpack-prod-stats.html'
         }),
-        new CopyWebpackPlugin([
-            { from: './src/assets', to: 'assets' },
-            { from: './src/assets/favicon.ico', to: 'favicon.ico' },
-            { from: './src/index.html', to: 'index.html' }
-        ]),
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: './src/assets', to: 'assets' },
+                { from: './src/assets/favicon.ico', to: 'favicon.ico' },
+                { from: './src/index.html', to: 'index.html' }
+            ]
+        }),
         new HtmlWebpackPlugin({
             template: './src/index.html',
             inject: false,
