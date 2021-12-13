@@ -2,10 +2,11 @@ import ResourceType from "./ResourceType.js";
 
 const ResourceStruct = {
     ready: false,
-    name: null,
+    name: undefined,
     type: ResourceType.NO,
-    instance:  null,
-    contentStructList: []
+    instance: undefined,
+    contentStruct: undefined,
+    resourceStructList: []
 };
 
 export default ResourceStruct;

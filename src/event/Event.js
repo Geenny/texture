@@ -10,3 +10,6 @@ export default class Event {
 Event.ANY = "any";
 Event.ACITVE = "active";
 Event.DEACTIVE = "deactive";
+Event.COMPLETE = "complete";
+Event.CANCEL = "cancel";
+Event.ERROR = "error";

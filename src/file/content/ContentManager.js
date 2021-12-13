@@ -1,14 +1,38 @@
 import { BaseTexture, Texture, Sprite } from "pixi.js";
+import FileType from "../FileType.js";
 import EventDispathcer from "../../event/EventDispatcher.js";
+import Event from "../../event/Event";
 import ContentDropGrabber from "./ContentDropGrabber.js";
 import ContentDropEvent from "./ContentDropEvent.js";
-import ResourceStruct from "./ResourceStruct.js";
-import ResourceType from "./ResourceType.js";
-import FileType from "../FileType.js";
-import ResourceEvent from "./ResourceEvent.js";
+import ResourceStruct from "../resource/ResourceStruct.js";
+import ResourceType from "../resource/ResourceType.js";
+import ResourceEvent from "../resource/ResourceEvent.js";
+import ResourceParser from "../resource/ResourceParserManager.js";
 import { TextureAtlas } from "@pixi-spine/base";
 import { AtlasAttachmentLoader, SkeletonJson, Spine } from "@pixi-spine/runtime-3.8";
+import ResourceParserEvent from "../resource/ResourceParserEvent.js";
 
+/**
+ *  // const image: HTMLImageElement = this.app.renderer.plugins.extract.base64(textures[0]);
+    // document.body.append(image);
+    // image.addEventListener("load", (e) => {
+
+    //     let a = document.createElement("a");
+    //     a.download = "image.png";
+    //     // @ts-ignore
+    //     a.href = image.toDataURL();
+    //     a.click();
+    //     a.remove();
+    // });
+
+    if (typeof id === "string") {
+        const aaa = this.app.renderer.plugins.extract.base64(textures[0]);
+        var a = document.createElement("a");
+        a.href = aaa;
+        a.download = "Image" + ~~(Math.random() * 100) + ".png";
+        a.click()
+    }
+ */
 export default class ContentManager extends EventDispathcer {
 
     constructor() {
@@ -18,6 +42,7 @@ export default class ContentManager extends EventDispathcer {
 
     init() {
         this._initVars();
+        this._initResourceParser();
         this._contentDropGrabberInit();
     }
 
@@ -36,7 +61,8 @@ export default class ContentManager extends EventDispathcer {
     onContentLoad( event ) {
         const contentStruct = event.contentStruct;
         this.contentStructAdd( contentStruct );
-        this.resourcesCheckReady();
+        this.contentToResourceParse( contentStruct );
+        // this.resourcesCheckReady();
     }
 
 
@@ -52,6 +78,52 @@ export default class ContentManager extends EventDispathcer {
         if ( !contentStruct || this.contentStructInList( contentStruct ) ) return;
         this._contentStructList.push( contentStruct );
     }
+
+    contentToResourceParse( contentStruct ) {
+        this.resourceParser.contentToResourceParse( contentStruct, this._contentStructList );
+    }
+
+
+
+
+
+    //
+    // RESOURCE
+    //
+
+    _initResourceParser() {
+        if ( this.resourceParser ) return;
+
+        this._resourceHandler = this._resourceHandler.bind( this );
+
+        this.resourceParser = new ResourceParser();
+        this.resourceParser.addEventListener( Event.ANY, this._resourceHandler );
+    }
+
+    _resourceHandler( event ) {
+        switch ( event.type ) {
+            case ResourceParserEvent.COMPLETE:
+                debugger;
+                break;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     //
@@ -272,6 +344,7 @@ export default class ContentManager extends EventDispathcer {
         const list = this._resourceSpineAtlasFileNamesGet( contentStructAtlas );
         if ( list.length === 0 ) return false;
 
+        // TODO resourceStruct.contentStructList is deprecated
         for ( let i = 0; i < resourceStruct.contentStructList.length; i++ ) {
             const contentStruct = resourceStruct.contentStructList[ i ];
             const index = list.indexOf( contentStruct.file.name );

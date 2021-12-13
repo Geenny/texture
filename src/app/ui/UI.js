@@ -1,5 +1,5 @@
 import { Container, Graphics, Point, Text } from "pixi.js";
-import ResourceType from "../../file/content/ResourceType";
+import ResourceType from "../../file/resource/ResourceType";
 
 export default class UI extends Container {
 
@@ -86,6 +86,7 @@ class ButtonItem extends Container {
     constructor( resource = null ) {
         super();
         this.resource = resource;
+        this.alpha = 0.05;
     }
 
     get type() { return "ADD"; }
@@ -130,7 +131,7 @@ class ButtonItem extends Container {
     }
     drawBorder() {
         const border = new Graphics();
-        border.lineStyle( 4, this.color, 1 );
+        border.lineStyle( 2, this.color, 1 );
         border.drawCircle( 0, 0, 30 );
         this.addChild( border );
     }
@@ -150,10 +151,10 @@ class ButtonItem extends Container {
         const line1 = new Graphics();
         const line2 = new Graphics();
 
-        line1.lineStyle( 5, this.color, 1, 0.5 )
+        line1.lineStyle( 2, this.color, 1, 0.5 )
             .moveTo( 0, -15 )
             .lineTo( 0, 15 );
-        line2.lineStyle( 5, this.color, 1, 0.5 )
+        line2.lineStyle( 2, this.color, 1, 0.5 )
             .moveTo( -15, 0 )
             .lineTo( 15, 0 );
 

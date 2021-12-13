@@ -8,16 +8,6 @@ export default class FileType {
     static get PNG() { return FileType.types.PNG; }
     static get JPG() { return FileType.types.JPG; }
 
-    static get types() {
-        return {
-            JSON: "json",
-            TXT: "txt",
-            ATLAS: "atlas",
-            PNG: "png",
-            JPG: "jpg"
-        };
-    }
-
     static isFileType( type ) {
         return FileType.types[ type ];
     }
@@ -40,6 +30,14 @@ export default class FileType {
     }
 
 }
+
+FileType.types = {
+    JSON: "json",
+    TXT: "txt",
+    ATLAS: "atlas",
+    PNG: "png",
+    JPG: "jpg"
+};
 
 
 

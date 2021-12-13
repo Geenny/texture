@@ -1,8 +1,8 @@
 import { Container, Text, Application, Graphics, Point } from "pixi.js";
 import { Tween } from "@createjs/tweenjs";
 import ContentManager from "../file/content/ContentManager";
-import ResourceEvent from "../file/content/ResourceEvent";
-import ResourceType from "../file/content/ResourceType";
+import ResourceEvent from "../file/resource/ResourceEvent";
+import ResourceType from "../file/resource/ResourceType";
 import UI from "./ui/UI";
 
 const CLICK = "click", DOWN = "mousedown", UP = "mouseup", OVER = "mouseover", OUT = "mouseout";
