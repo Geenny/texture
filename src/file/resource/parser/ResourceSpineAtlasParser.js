@@ -2,8 +2,7 @@ import FileType from "../../FileType";
 import ResourceStruct from "../ResourceStruct";
 import ResourceType from "../ResourceType";
 import AbstractResourceParser from "./AbstractResourceParser";
-import { Texture, BaseTexture, Sprite, Point } from "pixi.js";
-import { property } from "lodash";
+import { Texture, Point, Rectangle } from "pixi.js";
 
 export default class ResourceSpineAtlasParser extends AbstractResourceParser {
 
@@ -60,6 +59,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
     resourceRequireSet( resourceStruct ) {
         this._resourceRequireAdd( resourceStruct );
         this.texturesParse();
+        this.resourceReady( this.resourceStruct );
     }
 
 
@@ -75,8 +75,28 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
     texturesCreateAll() {
         for ( let i = 0; i < this.resourceStruct.resourceStructList.length; i++ ) {
             const imageResourceStruct = this.resourceStruct.resourceStructList[ i ];
-            // const texture = 
+            const texture = imageResourceStruct.instance.texture;
+            const atlasStruct = this._atlasStructByFileNameGet( imageResourceStruct.contentStruct.file.name );
+            this._texturesByAtlasStructCreate( atlasStruct, texture );
         }
+    }
+
+    _texturesByAtlasStructCreate( atlasStruct, source ) {
+        if ( !atlasStruct ) return;
+        for ( let i = 0; i < atlasStruct.textureStructList.length; i++ ) {
+            const textureStruct = atlasStruct.textureStructList[ i ];
+            this._textureCreate( textureStruct, source );
+        }
+    }
+
+    _textureCreate( textureStruct, source ) {
+        if ( !textureStruct ) return;
+        const width = textureStruct.rotate ? textureStruct.size.y : textureStruct.size.x;
+        const height = textureStruct.rotate ? textureStruct.size.x : textureStruct.size.y;
+        const frame = new Rectangle( textureStruct.xy.x, textureStruct.xy.y, width, height );
+        const rotate = textureStruct.rotate ? 2 : 0;
+        const texture = new Texture( source, frame, undefined, undefined, rotate );
+        Texture.addToCache( texture, textureStruct.name );
     }
 
 
@@ -86,12 +106,25 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
     //
 
     atlasParse() {
+        const atlasStructList = this._atlasStructListGet( this.resourceStruct.contentStruct )
+        const sourceNameList = atlasStructList.map(atlas => atlas.name);
+
         this.spineAtlasStruct = {
             ... SpineAtlasStruct,
             name: this.resourceStruct.name,
-            sourceNameList: this._resourceSpineAtlasFileNamesGet( this.resourceStruct.contentStruct ),
-            atlasStructList: this._atlasStructListGet( this.resourceStruct.contentStruct )
+            sourceNameList,
+            atlasStructList
+        };
+        this.resourceStruct.instance = this.spineAtlasStruct;
+    }
+
+    _atlasStructByFileNameGet( name ) {
+        for ( let i = 0; i < this.spineAtlasStruct.atlasStructList.length; i++ ) {
+            const atlasStruct = this.spineAtlasStruct.atlasStructList[ i ];
+            if ( atlasStruct.name !== name ) continue;
+            return atlasStruct;
         }
+        return undefined;
     }
 
     _atlasStructListGet( contentStruct ) {
@@ -102,9 +135,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
         const REGION_PROP_PREFIX = "  ";
 
         let positionLine = 0;
-        let positionLineFirst = 0;
         let positionLineLast = 0;
-        let nameLength = 0;
         let atlas = undefined;
         let texture = undefined;
         let line = undefined;
@@ -136,11 +167,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
                 atlas = undefined;
                 texture = undefined;
             } else if ( !atlas ) {
-                atlas = {
-                    ...AtlasStruct,
-                    name: line,
-                    textureStructList: []
-                };
+                atlas = { ...AtlasStruct, name: line, textureStructList: [] };
 
             // Atlas property
             } else if ( line.indexOf( REGION_PROP_PREFIX ) === -1 && line.indexOf( PROP_DIVIDER ) > 0 ) {
@@ -153,10 +180,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
                 if ( texture ) {
                     atlas.textureStructList.push( texture );
                 }
-                texture = {
-                    ... TextureStruct,
-                    name: line
-                };
+                texture = { ... TextureStruct, name: line };
 
             // texture property
             } else if ( line.indexOf( REGION_PROP_PREFIX ) >= 0 && line.indexOf( PROP_DIVIDER ) > 0 ) {
@@ -212,36 +236,6 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
         this.resourceStruct.resourceStructList.push( resourceStruct );
 
         console.log("ResourceSpineAtlasParser: ", resourceStruct.name, " ADD");
-    }
-
-    _resourceSpineAtlasFileNamesGet( contentStruct ) {
-        const LINE_NEW = "\n";
-        const list = [];
-
-        let positionLine = 0;
-        let positionLineFirst = 0;
-        let positionLineLast = 0;
-        let nameLength = 0;
-        let divider = LINE_NEW;
-
-        while (true) {
-            if (positionLine > 0) divider = LINE_NEW + LINE_NEW;
-            positionLine = contentStruct.result.indexOf(divider, positionLine);
-            if (positionLine < 0) break;
-
-            positionLineFirst = positionLine + divider.length;
-            positionLineLast = contentStruct.result.indexOf(LINE_NEW, positionLineFirst);
-            nameLength = positionLineLast - positionLineFirst;
-
-            if (nameLength > 0 && nameLength < 256) {
-                list.push( contentStruct.result.substring( positionLineFirst, positionLineLast ) );
-                positionLine = positionLineLast + 1;
-            } else {
-                break;
-            }
-        }
-
-        return list;
     }
 
 }
