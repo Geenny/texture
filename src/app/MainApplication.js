@@ -59,7 +59,7 @@ export default class MainApplication {
         this.HTMLElement.appendChild( application.view );
 
         this.application = application;
-        Application.application = application;
+        MainApplication.application = application;
 
     }
 

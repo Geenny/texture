@@ -1,6 +1,7 @@
 import { AtlasAttachmentLoader, SkeletonJson, Spine } from "@pixi-spine/runtime-3.8";
 import { TextureAtlas } from "pixi-spine";
-import { Application, Graphics, Texture } from "pixi.js";
+import { Graphics, Texture } from "pixi.js";
+import MainApplication from "../../../app/MainApplication";
 import FileType from "../../FileType";
 import ResourceStruct from "../ResourceStruct";
 import ResourceType from "../ResourceType";
@@ -10,16 +11,6 @@ import AbstractResourceParser from "./AbstractResourceParser";
  * https://github.com/pixijs/spine/blob/master/examples/dynamic_texture_atlas.md
  */
 export default class ResourceSpineParser extends AbstractResourceParser {
-
-    static get texture() {
-        if (!ResourceSpineParser._texture) {
-            const graphics = new Graphics();
-            graphics.beginFill(0xff0000, 0.2);
-            graphics.drawRect(0, 0, 100, 100);
-            ResourceSpineParser._texture = Application.application.renderer.generateTexture(graphics, {});
-        }
-        return ResourceSpineParser._texture;
-    }
 
     get resourceRequireNameList() {
         this.resourceStruct;
@@ -33,7 +24,7 @@ export default class ResourceSpineParser extends AbstractResourceParser {
     
     parse( contentStruct ) {
         this.resourceCreate( contentStruct );
-        // this.spineJSONParse();
+        this.spineJSONParse();
     }
 
     resourceCreate( contentStruct ) {
@@ -77,21 +68,22 @@ export default class ResourceSpineParser extends AbstractResourceParser {
     spineJSONParse() {
         this.json = this.jsonParseToObjectGet( this.resourceStruct.contentStruct.result );
         
-        this.attachmentNameList = this.skinsAttachmentNamesGet( this.json.skins );
-        debugger;
+        const attachmentList = this.skinsAttachmentNamesGet( this.json.skins );
+        const attachmentData = this.TESTcreateAtlasData( attachmentList );
 
-        const spineAtlas = new TextureAtlas( this.json,
-            function( name, callback ) {
-                callback(Texture.from(name));
-            }
-        );
+        const spineAtlas = new TextureAtlas();
+        spineAtlas.addTextureHash( attachmentData, false );
 
         const spineAtlasLoader = new AtlasAttachmentLoader( spineAtlas );
         const spineJsonParser = new SkeletonJson( spineAtlasLoader );
         const spineData = spineJsonParser.readSkeletonData( this.json );
 
         const spine = new Spine( spineData );
-        debugger;
+        spine.position.set( 600, 400 );
+        spine.scale.set( 0.5 );
+        spine.state.setAnimation( 0, "animation", true );
+
+        MainApplication.application.stage.addChild( spine );
     }
 
 
@@ -102,37 +94,63 @@ export default class ResourceSpineParser extends AbstractResourceParser {
     skinsAttachmentNamesGet( skins ) {
         if ( !skins || !skins.length ) return;
 
+        const list = [];
+
         for ( let i = 0; i < skins.length; i++ ) {
             const skin = skins[ i ];
             // const attachment = this.skinsAttachmentParse( skin.attachments );
 
-            for (const name in skin.attachments) {
-                const attachment = skin.attachments[name];
-                for (const attachTextureName in attachment) {
-                    const attachTextureData = attachment[attachTextureName];
-                    Texture.addToCache(ResourceSpineParser.texture, attachTextureName);
+            for ( const attachmentsName in skin.attachments ) {
+                const attachmentsData = skin.attachments[ attachmentsName ];
+                for ( const attachmentName in attachmentsData ) {
+                    const attachmentData = attachmentsData[ attachmentName ];
+
+                    const texture = this.TESTcreateTexture( attachmentData );
+                    Texture.addToCache( texture, attachmentName );
+                    
+                    list.push( { name: attachmentName, attachment: attachmentData, texture } );
                 }
             }
         }
+
+        return list;
     }
 
-    skinAttachmentsParse( attachmentObject ) {
-        const { name, attachments } = attachmentObject;
-        return {
-            ...AttachmentStruct,
-            name,
-            attachments: this
-        }
+
+
+    // skinAttachmentsParse( attachmentObject ) {
+    //     const { name, attachments } = attachmentObject;
+    //     return {
+    //         ...AttachmentStruct,
+    //         name,
+    //         attachments: this
+    //     }
+    // }
+
+
+    //
+    // TRASH
+    //
+
+    TESTcreateAtlasData( attachmentList ) {
+        const object = {};
+        attachmentList.map( attachment => { 
+            object[ attachment.name ] = attachment.texture;
+        } );
+        return object;
     }
 
-}
+    TESTcreateTexture( attachmentData ) {
+        const graphics = new Graphics();
+        graphics.beginFill( 0xff0000, 0.2 );
+        graphics.drawRect( 0, 0, attachmentData.width, attachmentData.height );
+        return MainApplication.application.renderer.generateTexture( graphics, {} );
+    }
 
-const AttachmentsStruct = {
-    name: undefined,
-    attachments: []
 }
 
 const AttachmentStruct = {
     name: undefined,
-    attachments: []
+    attachment: undefined,
+    texture: undefined
 }

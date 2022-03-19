@@ -34,6 +34,14 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
         return this.resourceRequireNameList.length === 0;
     }
 
+    get atlas() {
+        return this.resourceStruct.instance;
+    }
+
+    get atlasTextureData() {
+        return this._atlasTextureData;
+    }
+
     guard( contentStruct ) {
         return contentStruct.type === FileType.ATLAS;
     }
@@ -41,6 +49,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
     parse( contentStruct ) {
         this.resourceCreate( contentStruct );
         this.atlasParse();
+        this.atlasTextureDataInit();
     }
 
     resourceCreate( contentStruct ) {
@@ -59,6 +68,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
     resourceRequireSet( resourceStruct ) {
         this._resourceRequireAdd( resourceStruct );
         this.texturesParse();
+        this.atlasCreate();
         this.resourceReady( this.resourceStruct );
     }
 
@@ -91,12 +101,14 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
 
     _textureCreate( textureStruct, source ) {
         if ( !textureStruct ) return;
+
         const width = textureStruct.rotate ? textureStruct.size.y : textureStruct.size.x;
         const height = textureStruct.rotate ? textureStruct.size.x : textureStruct.size.y;
         const frame = new Rectangle( textureStruct.xy.x, textureStruct.xy.y, width, height );
         const rotate = textureStruct.rotate ? 2 : 0;
         const texture = new Texture( source, frame, undefined, undefined, rotate );
-        Texture.addToCache( texture, textureStruct.name );
+
+        this._atlasTextureData[ textureStruct.name ] = texture;
     }
 
 
@@ -107,7 +119,7 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
 
     atlasParse() {
         const atlasStructList = this._atlasStructListGet( this.resourceStruct.contentStruct )
-        const sourceNameList = atlasStructList.map(atlas => atlas.name);
+        const sourceNameList = atlasStructList.map( atlas => atlas.name );
 
         this.spineAtlasStruct = {
             ... SpineAtlasStruct,
@@ -115,7 +127,16 @@ export default class ResourceSpineAtlasParser extends AbstractResourceParser {
             sourceNameList,
             atlasStructList
         };
-        this.resourceStruct.instance = this.spineAtlasStruct;
+    }
+
+    atlasCreate() {
+        const atlas = new TextureAtlas();
+        atlas.addTextureHash( this.atlasTextureData, false );
+        this.resourceStruct.instance = atlas;
+    }
+
+    atlasTextureDataInit() {
+        this._atlasTextureData = { };
     }
 
     _atlasStructByFileNameGet( name ) {
