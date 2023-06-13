@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="user-scalable=no, initial-scale=1, maximum-scale=1, width=device-width">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>HTML5 Original</title>
+
+    <style type="text/css">
+        .form-style {
+            max-width: 100%;
+            padding: 20px 20px;
+            background: #f4f7f8;
+            margin: 10px auto;
+            border-radius: 14px;
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+        }
+        .form-style fieldset {
+            border: none;
+        }
+        .form-style legend {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .form-style label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 20px;
+            font-weight: 400;
+        }
+        .form-style input[type="text"],
+        .form-style input[type="date"],
+        .form-style input[type="datetime"],
+        .form-style input[type="email"],
+        .form-style input[type="search"],
+        .form-style input[type="time"],
+        .form-style input[type="url"],
+        .form-style textarea,
+        .form-style select {
+            font-family: Arial, sans-serif;
+            border: none;
+            border-radius: 4px;
+            font-size: 20px;
+            outline: 0;
+            padding: 7px;
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            background-color: #e8eeef;
+            color: #8a97a0;
+            -webkit-box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03) inset;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03) inset;
+            margin-bottom: 30px;
+        }
+
+        .form-style input[type="submit"],
+        .form-style input[type="button"] {
+            position: relative;
+            display: block;
+            padding: 19px 39px 18px 39px;
+            color: #FFF;
+            background: #1abc9c;
+            font-size: 22px;
+            text-align: center;
+            font-style: normal;
+            width: 100%;
+            border: 1px solid #16a085;
+            margin-bottom: 10px;
+        }
+
+        .form-style input[type="submit"]:hover,
+        .form-style input[type="button"]:hover {
+            background: #109177;
+        }
+    </style>
+
+</head>
+<body>
+
+
+<div class="form-style">
+    <form method="get">
+        <label for="sheets">SHEET:</label>
+        <select id = "sheets"></select>
+
+        <label for="template">TEMPLATE JSON (drop here)</label>
+        <textarea id="template" rows="20" cols="150"></textarea>
+        <input type="button" value="Download" onclick="create()" />
+    </form>
+</div>
+
+
+<script>
+    // Заблокировать на редактирование: Data -> Protect sheets and ranges ->
+
+    const sheets = [
+        "boom_gold_preloader",
+        "boom_gold_main"
+    ]
+
+    const keyId = "15BxJnxzOBudmoHKEE6HYpsposIOXTQa6HUbPV7VOMKU";
+    const url = `https://docs.google.com/spreadsheets/d/${keyId}/gviz/tq?tqx=out:json&sheet=`;
+    let template, i = 0;
+
+    // Обрезает заданную подстроку с начала и конца строки
+    if (!String.prototype.crop) {
+        String.prototype.crop = function (searchValue) {
+            const cropLeft = (string, searchValue) => {
+                if (string.indexOf(searchValue) === 0) {
+                    let str = string.slice(searchValue.length);
+                    return cropLeft(str, searchValue);
+                } else {
+                    return string;
+                }
+            }
+
+            const cropRight = (string, searchValue) => {
+                if (string.lastIndexOf(searchValue) === string.length - searchValue.length) {
+                    let str = string.slice(0, string.length - searchValue.length);
+                    return cropRight(str, searchValue);
+                } else {
+                    return string;
+                }
+            }
+
+            return cropRight(cropLeft(this, searchValue), searchValue);
+        };
+    }
+
+    // drag and drop
+    const dropZone = document.getElementById("template");
+    dropZone.addEventListener('dragover', event => {
+        event.stopPropagation();
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+    }, false);
+    dropZone.addEventListener('drop', event => {
+        event.stopPropagation();
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        const reader = new FileReader();
+        reader.readAsText(files[0]);
+        reader.onload = e => {
+            document.getElementById("template").value = e.target.result;
+            template = e.target.result;
+        };
+    }, false);
+
+    const createDomList = sheetsList => {
+        const selectElement = document.getElementById('sheets');
+        sheetsList.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = url + name;
+            opt.innerHTML = name;
+            selectElement.appendChild(opt);
+        });
+    }
+
+    function create(){
+        i = 0;
+        const url = document.getElementById('sheets').value;
+
+        let result = {};
+        console.log('URL', url);
+
+        if (!template) {
+            console.warn('drop template before start');
+            return;
+        }
+
+        function toJSON (text) {
+            result = text.substring(result.indexOf("(") + 1, result.lastIndexOf(");"));
+            result = JSON.parse(result).table.rows.map(a => a.c);
+            let length = result[0].indexOf(null);
+            result.forEach( a => a.length = length);
+            return result.map(a => a.map(b => b === null ? null : b.v))
+        }
+
+        function eachLanguage(result, fn) {
+            for (let i = 1, l= result[0].length; i < l; i++) {
+                for (let j = 1, ln = result.length; j < ln; j++) {
+                    const language = result[0][i].substring(5);
+                    const textId = result[j][0];
+                    const value = result[j][i];
+                    fn(language, textId, value);
+                }
+            }
+        }
+
+        function createFile(language, content) {
+                setTimeout(() => {
+                    const a = document.createElement("a");
+                    const file = new Blob([content], {type: 'text/plain'});
+                    a.href = URL.createObjectURL(file);
+                    a.download = language + '.json';
+                    a.click();
+                }, i * 500);
+                i++;
+        }
+
+        fetch(url)
+            .then(async response => {
+                if (response.status >= 400 && response.status < 600) {
+                    throw new Error();
+                } else {
+                    result = await response.text();
+                    result = toJSON(result);
+
+                    let lang, content;
+                    eachLanguage(result, (language, textId, value) => {
+                        if (lang !== language){
+                            if (lang !== undefined) {
+                                createFile(lang, content);
+                            }
+                            lang = language;
+                            content = template;
+                        }
+                        let text = (value === null) ? '' : value;
+                        content = content.replaceAll(`[[${textId}]]`, text);
+                    })
+
+                    createFile(lang, content);
+                }
+            })
+    }
+
+    /*** START ***/
+    createDomList(sheets);
+
+</script>
+
+</body>
+</html>

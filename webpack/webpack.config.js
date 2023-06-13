@@ -30,7 +30,8 @@ module.exports = {
 			patterns: [
 				{ from: './src/assets', to: 'assets' },
 				{ from: './src/assets/favicon.ico', to: 'favicon.ico' },
-				{ from: './src/index.html', to: 'index.html' }
+				{ from: './src/index.html', to: 'index.html' },
+				{ from: './src/Localizer.html', to: 'Localizer.html' }
 			]
 		})
 	],
